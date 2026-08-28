@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <title>Car Booking</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 25px;
+    }
+
+    .profile {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    #picture {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: none;
+      margin: auto;
+    }
+
+    #status {
+      margin-top: 20px;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🚗 ระบบจองรถ</h1>
+
+  <div id="status">
+    กำลังเชื่อมต่อ LINE...
+  </div>
+
+  <div class="profile">
+
+    <img id="picture">
+
+    <p>
+      👤 ชื่อ:
+      <strong id="displayName">-</strong>
+    </p>
+
+    <p>
+      🆔 LINE User ID:
+      <br>
+      <span id="userId">-</span>
+    </p>
+
+  </div>
+
+</div>
+
+
+<!-- LINE LIFF SDK -->
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+
+<script>
+
+const LIFF_ID = '2011261923-yetmmlij';
+
+
+async function startLIFF() {
+
+  try {
+
+    document.getElementById('status').innerText =
+      'กำลังเริ่ม LIFF...';
+
+
+    // เริ่มต้น LIFF
+
+    await liff.init({
+      liffId: LIFF_ID
+    });
+
+
+    document.getElementById('status').innerText =
+      'กำลังตรวจสอบบัญชี LINE...';
+
+
+    // ถ้ายังไม่ได้ Login
+
+    if (!liff.isLoggedIn()) {
+
+      liff.login();
+
+      return;
+
+    }
+
+
+    // อ่านข้อมูล LINE Profile
+
+    const profile =
+      await liff.getProfile();
+
+
+    document.getElementById('displayName')
+      .innerText =
+      profile.displayName;
+
+
+    document.getElementById('userId')
+      .innerText =
+      profile.userId;
+
+
+    if (profile.pictureUrl) {
+
+      const picture =
+        document.getElementById('picture');
+
+      picture.src =
+        profile.pictureUrl;
+
+      picture.style.display =
+        'block';
+
+    }
+
+
+    document.getElementById('status').innerText =
+      '✅ เชื่อมต่อ LINE สำเร็จ';
+
+
+    console.log(
+      'LINE User ID:',
+      profile.userId
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById('status').innerText =
+      '❌ เกิดข้อผิดพลาด: ' +
+      error.message;
+
+  }
+
+}
+
+
+startLIFF();
+
+</script>
+
+</body>
+
+</html>
