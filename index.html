@@ -10,82 +10,30 @@
 
   <title>Car Booking</title>
 
-  <style>
-
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      margin: 0;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 500px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      text-align: center;
-    }
-
-    h1 {
-      margin-bottom: 25px;
-    }
-
-    .profile {
-      margin-top: 20px;
-      padding: 20px;
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-
-    #picture {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      display: none;
-      margin: auto;
-    }
-
-    #status {
-      margin-top: 20px;
-    }
-
-  </style>
-
 </head>
 
 <body>
 
-<div class="container">
+<h2>🚗 ระบบจองรถ</h2>
 
-  <h1>🚗 ระบบจองรถ</h1>
+<div id="status">
+  กำลังเชื่อมต่อ LINE...
+</div>
 
-  <div id="status">
-    กำลังเชื่อมต่อ LINE...
-  </div>
+<div id="profile">
 
-  <div class="profile">
+  <p>
+    👤 ชื่อ:
+    <span id="displayName">-</span>
+  </p>
 
-    <img id="picture">
-
-    <p>
-      👤 ชื่อ:
-      <strong id="displayName">-</strong>
-    </p>
-
-    <p>
-      🆔 LINE User ID:
-      <br>
-      <span id="userId">-</span>
-    </p>
-
-  </div>
+  <p>
+    🆔 LINE User ID:
+    <span id="userId">-</span>
+  </p>
 
 </div>
 
-
-<!-- LINE LIFF SDK -->
 
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -93,6 +41,9 @@
 <script>
 
 const LIFF_ID = '2011261923-yetmmlij';
+
+const GAS_URL =
+'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
 
 
 async function startLIFF() {
@@ -103,18 +54,14 @@ async function startLIFF() {
       'กำลังเริ่ม LIFF...';
 
 
-    // เริ่มต้น LIFF
+    // เริ่ม LIFF
 
     await liff.init({
       liffId: LIFF_ID
     });
 
 
-    document.getElementById('status').innerText =
-      'กำลังตรวจสอบบัญชี LINE...';
-
-
-    // ถ้ายังไม่ได้ Login
+    // ตรวจสอบ Login
 
     if (!liff.isLoggedIn()) {
 
@@ -125,44 +72,63 @@ async function startLIFF() {
     }
 
 
-    // อ่านข้อมูล LINE Profile
+    document.getElementById('status').innerText =
+      'กำลังอ่านข้อมูล LINE...';
+
+
+    // อ่าน Profile
 
     const profile =
       await liff.getProfile();
 
 
-    document.getElementById('displayName')
-      .innerText =
+    const lineUserId =
+      profile.userId;
+
+    const name =
       profile.displayName;
 
 
+    // แสดงข้อมูล
+
+    document.getElementById('displayName')
+      .innerText = name;
+
     document.getElementById('userId')
-      .innerText =
-      profile.userId;
-
-
-    if (profile.pictureUrl) {
-
-      const picture =
-        document.getElementById('picture');
-
-      picture.src =
-        profile.pictureUrl;
-
-      picture.style.display =
-        'block';
-
-    }
+      .innerText = lineUserId;
 
 
     document.getElementById('status').innerText =
-      '✅ เชื่อมต่อ LINE สำเร็จ';
+      'กำลังบันทึกข้อมูลผู้ใช้งาน...';
 
 
-    console.log(
-      'LINE User ID:',
-      profile.userId
-    );
+    // ส่งข้อมูลไป Apps Script
+
+    const url =
+      GAS_URL +
+      '?action=saveLIFFUser' +
+      '&lineUserId=' +
+      encodeURIComponent(lineUserId) +
+      '&name=' +
+      encodeURIComponent(name);
+
+
+    const response = await fetch(url);
+
+const result = await response.text();
+
+console.log('Apps Script status:', response.status);
+console.log('Apps Script result:', result);
+
+document.getElementById('status').innerText =
+  'Apps Script HTTP: ' +
+  response.status +
+  ' | Result: ' +
+  result;
+
+
+    document.getElementById('status').innerText =
+      '✅ เชื่อมต่อระบบสำเร็จ';
 
 
   } catch (error) {
