@@ -16,12 +16,17 @@
 
 </head>
 
+
 <body>
 
   <h2>🚗 ระบบจองรถ</h2>
 
-  <div id="status">
-    กำลังเริ่มระบบ...
+  <div id="app">
+
+    <div id="status">
+      กำลังเริ่มระบบ...
+    </div>
+
   </div>
 
 
@@ -39,7 +44,7 @@
 
 
     // =====================================
-    // MAIN
+    // START LIFF
     // =====================================
 
     async function startLIFF() {
@@ -51,7 +56,7 @@
       try {
 
         // ---------------------------------
-        // 1. เริ่ม LIFF
+        // 1. LIFF INIT
         // ---------------------------------
 
         status.innerText =
@@ -63,7 +68,7 @@
 
 
         // ---------------------------------
-        // 2. ตรวจ Login
+        // 2. LOGIN
         // ---------------------------------
 
         status.innerText =
@@ -71,9 +76,6 @@
 
 
         if (!liff.isLoggedIn()) {
-
-          status.innerText =
-            'กำลังเข้าสู่ระบบ LINE...';
 
           liff.login();
 
@@ -83,7 +85,7 @@
 
 
         // ---------------------------------
-        // 3. อ่านข้อมูล LINE
+        // 3. GET PROFILE
         // ---------------------------------
 
         status.innerText =
@@ -102,25 +104,12 @@
 
 
         // ---------------------------------
-        // 4. แสดงข้อมูลเบื้องต้น
+        // 4. CHECK USER
         // ---------------------------------
 
-        status.innerHTML =
-
-          '👤 ชื่อ: ' +
-          name +
-          '<br><br>' +
-
-          '🆔 LINE User ID: ' +
-          lineUserId +
-          '<br><br>' +
-
+        status.innerText =
           '4. กำลังตรวจสอบสิทธิ์...';
 
-
-        // ---------------------------------
-        // 5. ตรวจสอบ User กับ Apps Script
-        // ---------------------------------
 
         const url =
 
@@ -148,21 +137,21 @@
 
 
         // ---------------------------------
-        // 6. ตรวจสอบผล
+        // 5. CHECK RESULT
         // ---------------------------------
 
         if (!result.success) {
 
           throw new Error(
             result.message ||
-            'เกิดข้อผิดพลาดในการตรวจสอบผู้ใช้'
+            'ไม่สามารถตรวจสอบผู้ใช้งานได้'
           );
 
         }
 
 
         // ---------------------------------
-        // 7. ไม่พบ User
+        // 6. USER NOT FOUND
         // ---------------------------------
 
         if (!result.found) {
@@ -185,7 +174,7 @@
 
 
         // ---------------------------------
-        // 8. ตรวจ Status
+        // 7. CHECK STATUS
         // ---------------------------------
 
         if (
@@ -208,31 +197,10 @@
 
 
         // ---------------------------------
-        // 9. ผ่าน
+        // 8. SHOW MAIN MENU
         // ---------------------------------
 
-        status.innerHTML =
-
-          '👤 ชื่อ: ' +
-          result.name +
-
-          '<br><br>' +
-
-          '🆔 LINE User ID: ' +
-          result.lineUserId +
-
-          '<br><br>' +
-
-          '🏢 Department: ' +
-          (result.department || '-') +
-
-          '<br><br>' +
-
-          '✅ ตรวจสอบสิทธิ์สำเร็จ' +
-
-          '<br><br>' +
-
-          'กำลังเข้าสู่ระบบ...';
+        showMainMenu(result);
 
 
       } catch (error) {
@@ -249,6 +217,89 @@
           error.message;
 
       }
+
+    }
+
+
+    // =====================================
+    // MAIN MENU
+    // =====================================
+
+    function showMainMenu(user) {
+
+      const app =
+        document.getElementById('app');
+
+
+      app.innerHTML = `
+
+        <h3>🚗 ระบบจองรถ</h3>
+
+        <p>
+          👤 ชื่อ: ${user.name}
+        </p>
+
+        <p>
+          🏢 Department:
+          ${user.department || '-'}
+        </p>
+
+        <hr>
+
+        <button
+          onclick="openBooking()"
+        >
+          🚗 จองรถ
+        </button>
+
+        <br><br>
+
+        <button
+          onclick="openMyBookings()"
+        >
+          📋 รายการจองของฉัน
+        </button>
+
+        <br><br>
+
+        <button
+          onclick="openMileage()"
+        >
+          🛣️ ประวัติการใช้รถ
+        </button>
+
+      `;
+
+    }
+
+
+    // =====================================
+    // MENU FUNCTIONS
+    // =====================================
+
+    function openBooking() {
+
+      alert(
+        'ระบบจองรถจะสร้างในขั้นตอนถัดไป'
+      );
+
+    }
+
+
+    function openMyBookings() {
+
+      alert(
+        'ระบบรายการจองจะสร้างในขั้นตอนถัดไป'
+      );
+
+    }
+
+
+    function openMileage() {
+
+      alert(
+        'ระบบ Mileage จะสร้างในขั้นตอนถัดไป'
+      );
 
     }
 
