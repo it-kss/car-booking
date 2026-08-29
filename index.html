@@ -5,148 +5,261 @@
 
   <meta charset="UTF-8">
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  <title>Car Booking</title>
+  <title>ระบบจองรถ</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
 </head>
 
 <body>
 
-<h2>🚗 ระบบจองรถ</h2>
+  <h2>🚗 ระบบจองรถ</h2>
 
-<div id="status">
-  กำลังเชื่อมต่อ LINE...
-</div>
-
-<div id="profile">
-
-  <p>
-    👤 ชื่อ:
-    <span id="displayName">-</span>
-  </p>
-
-  <p>
-    🆔 LINE User ID:
-    <span id="userId">-</span>
-  </p>
-
-</div>
+  <div id="status">
+    กำลังเริ่มระบบ...
+  </div>
 
 
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script>
+
+    // =====================================
+    // CONFIG
+    // =====================================
+
+    const LIFF_ID =
+      '2011261923-yetmmlij';
+
+    const GAS_URL =
+      'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
 
 
-<script>
+    // =====================================
+    // MAIN
+    // =====================================
 
-const LIFF_ID = '2011261923-yetmmlij';
+    async function startLIFF() {
 
-const GAS_URL =
-'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
-
-
-async function startLIFF() {
-
-  try {
-
-    document.getElementById('status').innerText =
-      'กำลังเริ่ม LIFF...';
+      const status =
+        document.getElementById('status');
 
 
-    // เริ่ม LIFF
+      try {
 
-    await liff.init({
-      liffId: LIFF_ID
-    });
+        // ---------------------------------
+        // 1. เริ่ม LIFF
+        // ---------------------------------
+
+        status.innerText =
+          '1. กำลังเริ่ม LIFF...';
+
+        await liff.init({
+          liffId: LIFF_ID
+        });
 
 
-    // ตรวจสอบ Login
+        // ---------------------------------
+        // 2. ตรวจ Login
+        // ---------------------------------
 
-    if (!liff.isLoggedIn()) {
+        status.innerText =
+          '2. กำลังตรวจสอบ LINE Login...';
 
-      liff.login();
 
-      return;
+        if (!liff.isLoggedIn()) {
+
+          status.innerText =
+            'กำลังเข้าสู่ระบบ LINE...';
+
+          liff.login();
+
+          return;
+
+        }
+
+
+        // ---------------------------------
+        // 3. อ่านข้อมูล LINE
+        // ---------------------------------
+
+        status.innerText =
+          '3. กำลังอ่านข้อมูลผู้ใช้งาน...';
+
+
+        const profile =
+          await liff.getProfile();
+
+
+        const lineUserId =
+          profile.userId;
+
+        const name =
+          profile.displayName;
+
+
+        // ---------------------------------
+        // 4. แสดงข้อมูลเบื้องต้น
+        // ---------------------------------
+
+        status.innerHTML =
+
+          '👤 ชื่อ: ' +
+          name +
+          '<br><br>' +
+
+          '🆔 LINE User ID: ' +
+          lineUserId +
+          '<br><br>' +
+
+          '4. กำลังตรวจสอบสิทธิ์...';
+
+
+        // ---------------------------------
+        // 5. ตรวจสอบ User กับ Apps Script
+        // ---------------------------------
+
+        const url =
+
+          GAS_URL +
+
+          '?action=checkLIFFUser' +
+
+          '&lineUserId=' +
+
+          encodeURIComponent(lineUserId);
+
+
+        const response =
+          await fetch(url);
+
+
+        const result =
+          await response.json();
+
+
+        console.log(
+          'CHECK USER:',
+          result
+        );
+
+
+        // ---------------------------------
+        // 6. ตรวจสอบผล
+        // ---------------------------------
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'เกิดข้อผิดพลาดในการตรวจสอบผู้ใช้'
+          );
+
+        }
+
+
+        // ---------------------------------
+        // 7. ไม่พบ User
+        // ---------------------------------
+
+        if (!result.found) {
+
+          status.innerHTML =
+
+            '❌ ไม่พบผู้ใช้งานในระบบ' +
+
+            '<br><br>' +
+
+            'LINE ของคุณยังไม่ได้รับอนุญาต' +
+
+            '<br>' +
+
+            'กรุณาติดต่อผู้ดูแลระบบ';
+
+          return;
+
+        }
+
+
+        // ---------------------------------
+        // 8. ตรวจ Status
+        // ---------------------------------
+
+        if (
+          String(result.status)
+            .toLowerCase() !== 'active'
+        ) {
+
+          status.innerHTML =
+
+            '⛔ บัญชีของคุณไม่สามารถใช้งานได้' +
+
+            '<br><br>' +
+
+            'Status: ' +
+            result.status;
+
+          return;
+
+        }
+
+
+        // ---------------------------------
+        // 9. ผ่าน
+        // ---------------------------------
+
+        status.innerHTML =
+
+          '👤 ชื่อ: ' +
+          result.name +
+
+          '<br><br>' +
+
+          '🆔 LINE User ID: ' +
+          result.lineUserId +
+
+          '<br><br>' +
+
+          '🏢 Department: ' +
+          (result.department || '-') +
+
+          '<br><br>' +
+
+          '✅ ตรวจสอบสิทธิ์สำเร็จ' +
+
+          '<br><br>' +
+
+          'กำลังเข้าสู่ระบบ...';
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        status.innerHTML =
+
+          '❌ เกิดข้อผิดพลาด' +
+
+          '<br><br>' +
+
+          error.message;
+
+      }
 
     }
 
 
-    document.getElementById('status').innerText =
-      'กำลังอ่านข้อมูล LINE...';
+    // =====================================
+    // START
+    // =====================================
 
+    startLIFF();
 
-    // อ่าน Profile
-
-    const profile =
-      await liff.getProfile();
-
-
-    const lineUserId =
-      profile.userId;
-
-    const name =
-      profile.displayName;
-
-
-    // แสดงข้อมูล
-
-    document.getElementById('displayName')
-      .innerText = name;
-
-    document.getElementById('userId')
-      .innerText = lineUserId;
-
-
-    document.getElementById('status').innerText =
-      'กำลังบันทึกข้อมูลผู้ใช้งาน...';
-
-
-    // ส่งข้อมูลไป Apps Script
-
-    const url =
-      GAS_URL +
-      '?action=saveLIFFUser' +
-      '&lineUserId=' +
-      encodeURIComponent(lineUserId) +
-      '&name=' +
-      encodeURIComponent(name);
-
-
-    const response = await fetch(url);
-
-const result = await response.text();
-
-console.log('Apps Script status:', response.status);
-console.log('Apps Script result:', result);
-
-document.getElementById('status').innerText =
-  'Apps Script HTTP: ' +
-  response.status +
-  ' | Result: ' +
-  result;
-
-
-    document.getElementById('status').innerText =
-      '✅ เชื่อมต่อระบบสำเร็จ';
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    document.getElementById('status').innerText =
-      '❌ เกิดข้อผิดพลาด: ' +
-      error.message;
-
-  }
-
-}
-
-
-startLIFF();
-
-</script>
+  </script>
 
 </body>
 
