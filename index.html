@@ -284,19 +284,32 @@
 
 
   app.innerHTML = `
+
     <h3>🚗 จองรถ</h3>
 
     <div id="bookingStatus">
       กำลังโหลดรายการรถ...
     </div>
+
   `;
 
 
   try {
 
+    // =====================================
+    // อ่าน LINE User
+    // =====================================
+
     const profile =
       await liff.getProfile();
 
+    const lineUserId =
+      profile.userId;
+
+
+    // =====================================
+    // ดึงรถ Available
+    // =====================================
 
     const url =
 
@@ -306,9 +319,7 @@
 
       '&lineUserId=' +
 
-      encodeURIComponent(
-        profile.userId
-      );
+      encodeURIComponent(lineUserId);
 
 
     const response =
@@ -329,16 +340,21 @@
     }
 
 
+    // =====================================
+    // ไม่มีรถ
+    // =====================================
+
     if (
       !result.cars ||
       result.cars.length === 0
     ) {
 
       app.innerHTML = `
+
         <h3>🚗 จองรถ</h3>
 
         <p>
-          ไม่พบรถที่พร้อมใช้งาน
+          ❌ ไม่พบรถที่พร้อมใช้งาน
         </p>
 
         <button
@@ -346,6 +362,7 @@
         >
           กลับหน้าหลัก
         </button>
+
       `;
 
       return;
@@ -353,58 +370,159 @@
     }
 
 
+    // =====================================
+    // สร้างรายการรถ
+    // =====================================
+
     let options = '';
 
 
-    result.cars.forEach(
-      car => {
+    result.cars.forEach(car => {
 
-        const label =
+      const label = [
 
-          [
-            car.carType,
-            car.brand,
-            car.model,
-            car.licensePlate
-          ]
-          .filter(Boolean)
-          .join(' - ');
+        car.carType,
+        car.brand,
+        car.model,
+        car.licensePlate
+
+      ]
+      .filter(Boolean)
+      .join(' - ');
 
 
-        options += `
-          <option
-            value="${car.carId}"
-          >
-            ${label}
-          </option>
-        `;
+      options += `
 
-      }
-    );
+        <option value="${car.carId}">
+          ${label}
+        </option>
 
+      `;
+
+    });
+
+
+    // =====================================
+    // แสดงแบบฟอร์ม
+    // =====================================
 
     app.innerHTML = `
 
       <h3>🚗 จองรถ</h3>
 
+
+      <!-- รถ -->
+
       <label>
-        เลือกรถ
+        🚘 เลือกรถ
       </label>
 
-      <br><br>
+      <br>
 
       <select
         id="carId"
+        required
       >
+
+        <option value="">
+          -- เลือกรถ --
+        </option>
+
         ${options}
+
       </select>
 
+
       <br><br>
+
+
+      <!-- วันเวลาเริ่ม -->
+
+      <label>
+        📅 วันและเวลาเริ่มใช้รถ
+      </label>
+
+      <br>
+
+      <input
+        type="datetime-local"
+        id="startDateTime"
+        required
+      />
+
+
+      <br><br>
+
+
+      <!-- วันเวลาสิ้นสุด -->
+
+      <label>
+        📅 วันและเวลาคืนรถ
+      </label>
+
+      <br>
+
+      <input
+        type="datetime-local"
+        id="endDateTime"
+        required
+      />
+
+
+      <br><br>
+
+
+      <!-- Destination -->
+
+      <label>
+        📍 สถานที่ไป
+      </label>
+
+      <br>
+
+      <input
+        type="text"
+        id="destination"
+        placeholder="เช่น สนามบินภูเก็ต"
+        required
+      />
+
+
+      <br><br>
+
+
+      <!-- Purpose -->
+
+      <label>
+        📝 วัตถุประสงค์
+      </label>
+
+      <br>
+
+      <textarea
+        id="purpose"
+        rows="4"
+        placeholder="ระบุวัตถุประสงค์ในการใช้รถ"
+        required
+      ></textarea>
+
+
+      <br><br>
+
+
+      <!-- Buttons -->
+
+      <button
+        onclick="submitBookingForm()"
+      >
+        📤 ตรวจสอบข้อมูล
+      </button>
+
 
       <button
         onclick="location.reload()"
       >
-        กลับหน้าหลัก
+        ↩️ กลับหน้าหลัก
       </button>
 
     `;
@@ -419,6 +537,8 @@
       <p>
         ❌ ${error.message}
       </p>
+
+      <br>
 
       <button
         onclick="location.reload()"
