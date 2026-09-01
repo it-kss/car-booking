@@ -277,31 +277,160 @@
     // MENU FUNCTIONS
     // =====================================
 
-    function openBooking() {
+    async function openBooking() {
 
-      alert(
-        'ระบบจองรถจะสร้างในขั้นตอนถัดไป'
+  const app =
+    document.getElementById('app');
+
+
+  app.innerHTML = `
+    <h3>🚗 จองรถ</h3>
+
+    <div id="bookingStatus">
+      กำลังโหลดรายการรถ...
+    </div>
+  `;
+
+
+  try {
+
+    const profile =
+      await liff.getProfile();
+
+
+    const url =
+
+      GAS_URL +
+
+      '?action=getAvailableCars' +
+
+      '&lineUserId=' +
+
+      encodeURIComponent(
+        profile.userId
+      );
+
+
+    const response =
+      await fetch(url);
+
+
+    const result =
+      await response.json();
+
+
+    if (!result.success) {
+
+      throw new Error(
+        result.message ||
+        'ไม่สามารถโหลดข้อมูลรถได้'
       );
 
     }
 
 
-    function openMyBookings() {
+    if (
+      !result.cars ||
+      result.cars.length === 0
+    ) {
 
-      alert(
-        'ระบบรายการจองจะสร้างในขั้นตอนถัดไป'
-      );
+      app.innerHTML = `
+        <h3>🚗 จองรถ</h3>
+
+        <p>
+          ไม่พบรถที่พร้อมใช้งาน
+        </p>
+
+        <button
+          onclick="location.reload()"
+        >
+          กลับหน้าหลัก
+        </button>
+      `;
+
+      return;
 
     }
 
 
-    function openMileage() {
+    let options = '';
 
-      alert(
-        'ระบบ Mileage จะสร้างในขั้นตอนถัดไป'
-      );
 
-    }
+    result.cars.forEach(
+      car => {
+
+        const label =
+
+          [
+            car.carType,
+            car.brand,
+            car.model,
+            car.licensePlate
+          ]
+          .filter(Boolean)
+          .join(' - ');
+
+
+        options += `
+          <option
+            value="${car.carId}"
+          >
+            ${label}
+          </option>
+        `;
+
+      }
+    );
+
+
+    app.innerHTML = `
+
+      <h3>🚗 จองรถ</h3>
+
+      <label>
+        เลือกรถ
+      </label>
+
+      <br><br>
+
+      <select
+        id="carId"
+      >
+        ${options}
+      </select>
+
+      <br><br>
+
+      <button
+        onclick="location.reload()"
+      >
+        กลับหน้าหลัก
+      </button>
+
+    `;
+
+
+  } catch (error) {
+
+    app.innerHTML = `
+
+      <h3>🚗 จองรถ</h3>
+
+      <p>
+        ❌ ${error.message}
+      </p>
+
+      <button
+        onclick="location.reload()"
+      >
+        กลับหน้าหลัก
+      </button>
+
+    `;
+
+  }
+
+}
 
 
     // =====================================
