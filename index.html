@@ -36,12 +36,12 @@
     // CONFIG
     // =====================================
 
-    const LIFF_ID =
-      '2011261923-yetmmlij';
+    const LIFF_ID = '2011261923-yetmmlij';
 
-    const GAS_URL =
-      'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
+const GAS_URL =
+  'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
 
+let pendingBooking = null;
 
     // =====================================
     // START LIFF
@@ -674,7 +674,23 @@
     return;
 
   }
+// =====================================
+// เก็บข้อมูลการจอง
+// =====================================
 
+pendingBooking = {
+
+  carId: carId,
+
+  startDateTime: startDateTime,
+
+  endDateTime: endDateTime,
+
+  destination: destination,
+
+  purpose: purpose
+
+};
 
   // =====================================
   // แสดงข้อมูลที่กรอก
@@ -761,14 +777,152 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 
 }
-    function confirmBookingForm() {
+    async function confirmBookingForm() {
 
-  alert(
-    'ข้อมูลถูกต้องแล้ว\n\n' +
-    'ระบบบันทึก Booking จะสร้างในขั้นตอนถัดไป'
-  );
+  const profile =
+    await liff.getProfile();
+
+  const lineUserId =
+    profile.userId;
+
+  if (!pendingBooking) {
+
+    alert(
+      '❌ ไม่พบข้อมูลการจอง'
+    );
+
+    return;
+
+  }
+
+  const {
+    carId,
+    startDateTime,
+    endDateTime,
+    destination,
+    purpose
+  } = pendingBooking;
+
+
+  const app =
+    document.getElementById('app');
+
+
+  app.innerHTML = `
+
+    <h3>⏳ กำลังบันทึกการจอง...</h3>
+
+    <p>
+      กรุณารอสักครู่
+    </p>
+
+  `;
+
+
+  try {
+
+    const url =
+
+      GAS_URL +
+
+      '?action=createBooking' +
+
+      '&lineUserId=' +
+      encodeURIComponent(lineUserId) +
+
+      '&carId=' +
+      encodeURIComponent(carId) +
+
+      '&startDateTime=' +
+      encodeURIComponent(startDateTime) +
+
+      '&endDateTime=' +
+      encodeURIComponent(endDateTime) +
+
+      '&destination=' +
+      encodeURIComponent(destination) +
+
+      '&purpose=' +
+      encodeURIComponent(purpose);
+
+
+    const response =
+      await fetch(url);
+
+
+    const result =
+      await response.json();
+
+
+    console.log(
+      'CREATE BOOKING:',
+      result
+    );
+
+
+    if (!result.success) {
+
+      throw new Error(
+        result.message ||
+        'ไม่สามารถสร้างรายการจองได้'
+      );
+
+    }
+
+
+    app.innerHTML = `
+
+      <h3>✅ จองรถสำเร็จ</h3>
+
+      <p>
+        เลขที่การจอง:
+        <strong>
+          ${escapeHtml(result.bookingId)}
+        </strong>
+      </p>
+
+      <br>
+
+      <button
+        onclick="location.reload()"
+      >
+        กลับหน้าหลัก
+      </button>
+
+    `;
+
+
+    pendingBooking = null;
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    app.innerHTML = `
+
+      <h3>❌ ไม่สามารถจองรถได้</h3>
+
+      <p>
+        ${escapeHtml(error.message)}
+      </p>
+
+      <br>
+
+      <button
+        onclick="openBooking()"
+      >
+        กลับไปแก้ไขการจอง
+      </button>
+
+    `;
+
+  }
 
 }
+   
+    
 
     // =====================================
     // START
