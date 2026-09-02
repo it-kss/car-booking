@@ -551,7 +551,224 @@
   }
 
 }
+    function submitBookingForm() {
 
+  const carId =
+    document.getElementById('carId')
+      .value;
+
+
+  const startDateTime =
+    document.getElementById('startDateTime')
+      .value;
+
+
+  const endDateTime =
+    document.getElementById('endDateTime')
+      .value;
+
+
+  const destination =
+    document.getElementById('destination')
+      .value
+      .trim();
+
+
+  const purpose =
+    document.getElementById('purpose')
+      .value
+      .trim();
+
+
+  // =====================================
+  // ตรวจข้อมูล
+  // =====================================
+
+  if (!carId) {
+
+    alert(
+      'กรุณาเลือกรถ'
+    );
+
+    return;
+
+  }
+
+
+  if (!startDateTime) {
+
+    alert(
+      'กรุณาระบุวันและเวลาเริ่มใช้รถ'
+    );
+
+    return;
+
+  }
+
+
+  if (!endDateTime) {
+
+    alert(
+      'กรุณาระบุวันและเวลาคืนรถ'
+    );
+
+    return;
+
+  }
+
+
+  if (!destination) {
+
+    alert(
+      'กรุณาระบุสถานที่ไป'
+    );
+
+    return;
+
+  }
+
+
+  if (!purpose) {
+
+    alert(
+      'กรุณาระบุวัตถุประสงค์'
+    );
+
+    return;
+
+  }
+
+
+  // =====================================
+  // ตรวจเวลา
+  // =====================================
+
+  const start =
+    new Date(startDateTime);
+
+
+  const end =
+    new Date(endDateTime);
+
+
+  if (
+    isNaN(start.getTime()) ||
+    isNaN(end.getTime())
+  ) {
+
+    alert(
+      'รูปแบบวันเวลไม่ถูกต้อง'
+    );
+
+    return;
+
+  }
+
+
+  if (end <= start) {
+
+    alert(
+      'วันเวลาคืนรถต้องมากกว่าวันเวลาเริ่มใช้รถ'
+    );
+
+    return;
+
+  }
+
+
+  // =====================================
+  // แสดงข้อมูลที่กรอก
+  // =====================================
+
+  const app =
+    document.getElementById('app');
+
+
+  app.innerHTML = `
+
+    <h3>🔍 ตรวจสอบข้อมูลการจอง</h3>
+
+
+    <p>
+      🚘 รถ:
+      ${carId}
+    </p>
+
+
+    <p>
+      📅 เริ่ม:
+      ${formatDateTime(start)}
+    </p>
+
+
+    <p>
+      📅 คืน:
+      ${formatDateTime(end)}
+    </p>
+
+
+    <p>
+      📍 สถานที่:
+      ${escapeHtml(destination)}
+    </p>
+
+
+    <p>
+      📝 วัตถุประสงค์:
+      ${escapeHtml(purpose)}
+    </p>
+
+
+    <hr>
+
+
+    <button
+      onclick="confirmBookingForm()"
+    >
+      ✅ ยืนยันข้อมูล
+    </button>
+
+
+    <button
+      onclick="openBooking()"
+    >
+      ✏️ แก้ไขข้อมูล
+    </button>
+
+
+  `;
+
+
+}
+    function formatDateTime(date) {
+
+  return date.toLocaleString(
+    'th-TH',
+    {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }
+  );
+
+}
+function escapeHtml(text) {
+
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+}
+    function confirmBookingForm() {
+
+  alert(
+    'ข้อมูลถูกต้องแล้ว\n\n' +
+    'ระบบบันทึก Booking จะสร้างในขั้นตอนถัดไป'
+  );
+
+}
 
     // =====================================
     // START
