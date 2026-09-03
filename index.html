@@ -484,24 +484,271 @@ async function openMyBookings() {
   }
 
 }
-    async function openBooking() {
+    async function openMyBookings() {
 
   const app =
     document.getElementById('app');
 
-
   app.innerHTML = `
 
-    <h3>🚗 จองรถ</h3>
+    <h3>📋 รายการจองทั้งหมด</h3>
 
-    <div id="bookingStatus">
-      กำลังโหลดรายการรถ...
+    <div id="bookingListStatus">
+      กำลังโหลดรายการจอง...
     </div>
 
   `;
 
-
   try {
+
+    // =====================================
+    // อ่าน LINE User
+    // =====================================
+
+    const profile =
+      await liff.getProfile();
+
+    const lineUserId =
+      profile.userId;
+
+    // =====================================
+    // อ่านข้อมูล User ปัจจุบัน
+    // =====================================
+
+    const userUrl =
+
+      GAS_URL +
+
+      '?action=checkLIFFUser' +
+
+      '&lineUserId=' +
+
+      encodeURIComponent(lineUserId);
+
+    const userResponse =
+      await fetch(userUrl);
+
+    const userResult =
+      await userResponse.json();
+
+    if (
+      !userResult.success ||
+      !userResult.found
+    ) {
+
+      throw new Error(
+        'ไม่พบข้อมูลผู้ใช้งาน'
+      );
+
+    }
+
+    const currentUserId =
+      String(userResult.userId || '').trim();
+
+    // =====================================
+    // เรียกรายการจองทั้งหมด
+    // =====================================
+
+    const url =
+
+      GAS_URL +
+
+      '?action=getAllBookings' +
+
+      '&lineUserId=' +
+
+      encodeURIComponent(lineUserId);
+
+    const response =
+      await fetch(url);
+
+    const result =
+      await response.json();
+
+    console.log(
+      'GET ALL BOOKINGS:',
+      result
+    );
+
+    if (!result.success) {
+
+      throw new Error(
+        result.message ||
+        'ไม่สามารถโหลดรายการจองได้'
+      );
+
+    }
+
+    // =====================================
+    // ไม่มีรายการจอง
+    // =====================================
+
+    if (
+      !result.bookings ||
+      result.bookings.length === 0
+    ) {
+
+      app.innerHTML = `
+
+        <h3>📋 รายการจองทั้งหมด</h3>
+
+        <p>
+          ยังไม่มีรายการจอง
+        </p>
+
+        <br>
+
+        <button
+          onclick="location.reload()"
+        >
+          ↩️ กลับหน้าหลัก
+        </button>
+
+      `;
+
+      return;
+
+    }
+
+    // =====================================
+    // แสดงรายการจอง
+    // =====================================
+
+    let html = `
+
+      <h3>📋 รายการจองทั้งหมด</h3>
+
+    `;
+
+    result.bookings.forEach(booking => {
+
+      const bookingUserId =
+        String(
+          booking.userId || ''
+        ).trim();
+
+      const bookingStatus =
+        String(
+          booking.status || ''
+        )
+        .trim()
+        .toUpperCase();
+
+      // แสดงปุ่มยกเลิกเฉพาะ
+      // 1. เป็นรายการของ User ปัจจุบัน
+      // 2. Status = BOOKED
+      const canCancel =
+
+        bookingUserId === currentUserId &&
+        bookingStatus === 'BOOKED';
+
+      html += `
+
+        <hr>
+
+        <p>
+          🔢 เลขที่การจอง:
+          <strong>
+            ${escapeHtml(String(booking.bookingId))}
+          </strong>
+        </p>
+
+        <p>
+          👤 ผู้จอง:
+          ${escapeHtml(String(booking.userName || '-'))}
+        </p>
+
+        <p>
+          🚘 รถ:
+          ${escapeHtml(String(booking.carId || '-'))}
+        </p>
+
+        <p>
+          📅 เริ่ม:
+          ${formatDateTime(new Date(booking.startDateTime))}
+        </p>
+
+        <p>
+          📅 คืน:
+          ${formatDateTime(new Date(booking.endDateTime))}
+        </p>
+
+        <p>
+          📍 สถานที่:
+          ${escapeHtml(String(booking.destination || '-'))}
+        </p>
+
+        <p>
+          📝 วัตถุประสงค์:
+          ${escapeHtml(String(booking.purpose || '-'))}
+        </p>
+
+        <p>
+          📌 สถานะ:
+          <strong>
+            ${escapeHtml(bookingStatus || '-')}
+          </strong>
+        </p>
+
+        ${
+          canCancel
+            ? `
+              <button
+                onclick="cancelBookingUI(
+                  '${escapeHtml(String(booking.bookingId))}'
+                )"
+              >
+                ❌ ยกเลิกการจอง
+              </button>
+            `
+            : ''
+        }
+
+      `;
+
+    });
+
+    html += `
+
+      <hr>
+
+      <br>
+
+      <button
+        onclick="location.reload()"
+      >
+        ↩️ กลับหน้าหลัก
+      </button>
+
+    `;
+
+    app.innerHTML = html;
+
+  } catch (error) {
+
+    console.error(error);
+
+    app.innerHTML = `
+
+      <h3>📋 รายการจองทั้งหมด</h3>
+
+      <p>
+        ❌ ${escapeHtml(error.message)}
+      </p>
+
+      <br>
+
+      <button
+        onclick="location.reload()"
+      >
+        ↩️ กลับหน้าหลัก
+      </button>
+
+    `;
+
+  }
+
+}
 
     // =====================================
     // อ่าน LINE User
