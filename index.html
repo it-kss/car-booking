@@ -1129,7 +1129,213 @@ function escapeHtml(text) {
 
 }
    
-    
+    async function openMileage() {
+
+  const app =
+    document.getElementById('app');
+
+  app.innerHTML = `
+
+    <h3>🛣️ ประวัติการใช้รถ</h3>
+
+    <p>
+      กำลังโหลดข้อมูล...
+    </p>
+
+  `;
+
+
+  try {
+
+    // =====================================
+    // อ่าน LINE User
+    // =====================================
+
+    const profile =
+      await liff.getProfile();
+
+    const lineUserId =
+      profile.userId;
+
+
+    // =====================================
+    // เรียก API
+    // =====================================
+
+    const url =
+
+      GAS_URL +
+
+      '?action=getMileageHistory' +
+
+      '&lineUserId=' +
+
+      encodeURIComponent(lineUserId);
+
+
+    const response =
+      await fetch(url);
+
+
+    const result =
+      await response.json();
+
+
+    console.log(
+      'GET MILEAGE HISTORY:',
+      result
+    );
+
+
+    if (!result.success) {
+
+      throw new Error(
+        result.message ||
+        'ไม่สามารถโหลดประวัติการใช้รถได้'
+      );
+
+    }
+
+
+    // =====================================
+    // ไม่มีข้อมูล
+    // =====================================
+
+    if (
+      !result.mileage ||
+      result.mileage.length === 0
+    ) {
+
+      app.innerHTML = `
+
+        <h3>🛣️ ประวัติการใช้รถ</h3>
+
+        <p>
+          ยังไม่มีประวัติการใช้รถ
+        </p>
+
+        <br>
+
+        <button
+          onclick="location.reload()"
+        >
+          ↩️ กลับหน้าหลัก
+        </button>
+
+      `;
+
+      return;
+
+    }
+
+
+    // =====================================
+    // แสดงข้อมูล
+    // =====================================
+
+    let html = `
+
+      <h3>🛣️ ประวัติการใช้รถ</h3>
+
+    `;
+
+
+    result.mileage.forEach(item => {
+
+      html += `
+
+        <hr>
+
+        <p>
+          🔢 เลขที่การจอง:
+          <strong>
+            ${escapeHtml(String(item.bookingId || '-'))}
+          </strong>
+        </p>
+
+        <p>
+          🚘 รถ:
+          ${escapeHtml(String(item.carId || '-'))}
+        </p>
+
+        <p>
+          📍 สถานที่:
+          ${escapeHtml(String(item.destination || '-'))}
+        </p>
+
+        <p>
+          🛣️ เลขไมล์เริ่ม:
+          ${escapeHtml(String(item.startMileage || '-'))}
+        </p>
+
+        <p>
+          🛣️ เลขไมล์สิ้นสุด:
+          ${escapeHtml(String(item.endMileage || '-'))}
+        </p>
+
+        <p>
+          📏 ระยะทาง:
+          ${escapeHtml(String(item.distanceKm || '-'))} กม.
+        </p>
+
+        <p>
+          📅 วันที่บันทึก:
+          ${
+            item.recordedAt
+              ? formatDateTime(new Date(item.recordedAt))
+              : '-'
+          }
+        </p>
+
+      `;
+
+    });
+
+
+    html += `
+
+      <hr>
+
+      <br>
+
+      <button
+        onclick="location.reload()"
+      >
+        ↩️ กลับหน้าหลัก
+      </button>
+
+    `;
+
+
+    app.innerHTML = html;
+
+
+  } catch (error) {
+
+    console.error(error);
+
+
+    app.innerHTML = `
+
+      <h3>🛣️ ประวัติการใช้รถ</h3>
+
+      <p>
+        ❌ ${escapeHtml(error.message)}
+      </p>
+
+      <br>
+
+      <button
+        onclick="location.reload()"
+      >
+        ↩️ กลับหน้าหลัก
+      </button>
+
+    `;
+
+  }
+
+}
 
     // =====================================
     // START
