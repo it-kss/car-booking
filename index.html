@@ -2,7 +2,6 @@
 <html lang="th">
 
 <head>
-
   <meta charset="UTF-8">
 
   <meta
@@ -14,6 +13,47 @@
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+      line-height: 1.5;
+    }
+
+    button,
+    select,
+    input,
+    textarea {
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    select,
+    input,
+    textarea {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 9px;
+      margin-top: 4px;
+    }
+
+    .booking-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .danger-button {
+      margin-top: 8px;
+    }
+  </style>
 </head>
 
 
@@ -22,11 +62,9 @@
   <h2>🚗 ระบบจองรถ</h2>
 
   <div id="app">
-
     <div id="status">
       กำลังเริ่มระบบ...
     </div>
-
   </div>
 
 
@@ -36,12 +74,83 @@
     // CONFIG
     // =====================================
 
-    const LIFF_ID = '2011261923-yetmmlij';
+    const LIFF_ID =
+      '2011261923-yetmmlij';
 
-const GAS_URL =
-  'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
+    const GAS_URL =
+      'https://script.google.com/macros/s/AKfycbwAqXQE9O2OGABOzbUrelsRqWv8holDq6sYXx2JQOAkgpBYftksidK0WKqPhxa30QK4/exec';
 
-let pendingBooking = null;
+    let pendingBooking = null;
+
+
+    // =====================================
+    // HELPERS
+    // =====================================
+
+    function escapeHtml(text) {
+
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    }
+
+
+    function formatDateTime(date) {
+
+      if (
+        !(date instanceof Date) ||
+        isNaN(date.getTime())
+      ) {
+        return '-';
+      }
+
+      return date.toLocaleString(
+        'th-TH',
+        {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        }
+      );
+
+    }
+
+
+    async function fetchJson(url) {
+
+      const response =
+        await fetch(url);
+
+      const text =
+        await response.text();
+
+      let result;
+
+      try {
+
+        result =
+          JSON.parse(text);
+
+      } catch (error) {
+
+        console.error(
+          'NON JSON RESPONSE:',
+          text
+        );
+
+        throw new Error(
+          'Server ตอบกลับไม่ใช่ JSON'
+        );
+
+      }
+
+      return result;
+
+    }
+
 
     // =====================================
     // START LIFF
@@ -50,14 +159,11 @@ let pendingBooking = null;
     async function startLIFF() {
 
       const status =
-        document.getElementById('status');
-
+        document.getElementById(
+          'status'
+        );
 
       try {
-
-        // ---------------------------------
-        // 1. LIFF INIT
-        // ---------------------------------
 
         status.innerText =
           '1. กำลังเริ่ม LIFF...';
@@ -66,10 +172,6 @@ let pendingBooking = null;
           liffId: LIFF_ID
         });
 
-
-        // ---------------------------------
-        // 2. LOGIN
-        // ---------------------------------
 
         status.innerText =
           '2. กำลังตรวจสอบ LINE Login...';
@@ -84,10 +186,6 @@ let pendingBooking = null;
         }
 
 
-        // ---------------------------------
-        // 3. GET PROFILE
-        // ---------------------------------
-
         status.innerText =
           '3. กำลังอ่านข้อมูลผู้ใช้งาน...';
 
@@ -99,13 +197,6 @@ let pendingBooking = null;
         const lineUserId =
           profile.userId;
 
-        const name =
-          profile.displayName;
-
-
-        // ---------------------------------
-        // 4. CHECK USER
-        // ---------------------------------
 
         status.innerText =
           '4. กำลังตรวจสอบสิทธิ์...';
@@ -119,15 +210,13 @@ let pendingBooking = null;
 
           '&lineUserId=' +
 
-          encodeURIComponent(lineUserId);
-
-
-        const response =
-          await fetch(url);
+          encodeURIComponent(
+            lineUserId
+          );
 
 
         const result =
-          await response.json();
+          await fetchJson(url);
 
 
         console.log(
@@ -135,10 +224,6 @@ let pendingBooking = null;
           result
         );
 
-
-        // ---------------------------------
-        // 5. CHECK RESULT
-        // ---------------------------------
 
         if (!result.success) {
 
@@ -149,10 +234,6 @@ let pendingBooking = null;
 
         }
 
-
-        // ---------------------------------
-        // 6. USER NOT FOUND
-        // ---------------------------------
 
         if (!result.found) {
 
@@ -173,13 +254,11 @@ let pendingBooking = null;
         }
 
 
-        // ---------------------------------
-        // 7. CHECK STATUS
-        // ---------------------------------
-
         if (
           String(result.status)
-            .toLowerCase() !== 'active'
+            .trim()
+            .toLowerCase() !==
+          'active'
         ) {
 
           status.innerHTML =
@@ -189,16 +268,15 @@ let pendingBooking = null;
             '<br><br>' +
 
             'Status: ' +
-            result.status;
+
+            escapeHtml(
+              result.status
+            );
 
           return;
 
         }
 
-
-        // ---------------------------------
-        // 8. SHOW MAIN MENU
-        // ---------------------------------
 
         showMainMenu(result);
 
@@ -214,7 +292,9 @@ let pendingBooking = null;
 
           '<br><br>' +
 
-          error.message;
+          escapeHtml(
+            error.message
+          );
 
       }
 
@@ -228,7 +308,9 @@ let pendingBooking = null;
     function showMainMenu(user) {
 
       const app =
-        document.getElementById('app');
+        document.getElementById(
+          'app'
+        );
 
 
       app.innerHTML = `
@@ -236,12 +318,17 @@ let pendingBooking = null;
         <h3>🚗 ระบบจองรถ</h3>
 
         <p>
-          👤 ชื่อ: ${user.name}
+          👤 ชื่อ:
+          ${escapeHtml(
+            user.name || '-'
+          )}
         </p>
 
         <p>
           🏢 Department:
-          ${user.department || '-'}
+          ${escapeHtml(
+            user.department || '-'
+          )}
         </p>
 
         <hr>
@@ -274,1194 +361,946 @@ let pendingBooking = null;
 
 
     // =====================================
-    // MENU FUNCTIONS
-    // =====================================
-async function openMyBookings() {
-
-  const app =
-    document.getElementById('app');
-
-  app.innerHTML = `
-
-    <h3>📋 รายการจองทั้งหมด</h3>
-
-    <div id="bookingListStatus">
-      กำลังโหลดรายการจอง...
-    </div>
-
-  `;
-
-
-  try {
-
-    // =====================================
-    // อ่าน LINE User
+    // รายการจองทั้งหมด
     // =====================================
 
-    const profile =
-      await liff.getProfile();
-
-    const lineUserId =
-      profile.userId;
-
-
-    // =====================================
-    // เรียก API
-    // =====================================
-
-    const url =
-
-      GAS_URL +
-
-      '?action=getAllBookings' +
-
-      '&lineUserId=' +
-
-      encodeURIComponent(lineUserId);
-
-
-    const response =
-      await fetch(url);
-
-
-    const result =
-      await response.json();
-
-
-    console.log(
-      'GET ALL BOOKINGS:',
-      result
-    );
-
-
-    if (!result.success) {
-
-      throw new Error(
-        result.message ||
-        'ไม่สามารถโหลดรายการจองได้'
-      );
-
-    }
-
-
-    // =====================================
-    // ไม่มีรายการจอง
-    // =====================================
-
-    if (
-      !result.bookings ||
-      result.bookings.length === 0
-    ) {
-
-      app.innerHTML = `
-
-        <h3>📋 รายการจองทั้งหมด</h3>
-
-        <p>
-          ยังไม่มีรายการจอง
-        </p>
-
-        <br>
-
-        <button
-          onclick="location.reload()"
-        >
-          ↩️ กลับหน้าหลัก
-        </button>
-
-      `;
-
-      return;
-
-    }
-
-
-    // =====================================
-    // แสดงรายการจอง
-    // =====================================
-
-    let html = `
-
-      <h3>📋 รายการจองทั้งหมด</h3>
-
-    `;
-
-
-    result.bookings.forEach(booking => {
-
-      html += `
-
-        <hr>
-
-        <p>
-          🔢 เลขที่การจอง:
-          <strong>
-            ${escapeHtml(String(booking.bookingId))}
-          </strong>
-        </p>
-
-        <p>
-          👤 ผู้จอง:
-          ${escapeHtml(String(booking.userName || '-'))}
-        </p>
-
-        <p>
-          🚘 รถ:
-          ${escapeHtml(String(booking.carId || '-'))}
-        </p>
-
-        <p>
-          📅 เริ่ม:
-          ${formatDateTime(new Date(booking.startDateTime))}
-        </p>
-
-        <p>
-          📅 คืน:
-          ${formatDateTime(new Date(booking.endDateTime))}
-        </p>
-
-        <p>
-          📍 สถานที่:
-          ${escapeHtml(String(booking.destination || '-'))}
-        </p>
-
-        <p>
-          📝 วัตถุประสงค์:
-          ${escapeHtml(String(booking.purpose || '-'))}
-        </p>
-
-        <p>
-          📌 สถานะ:
-          ${escapeHtml(String(booking.status || '-'))}
-        </p>
-
-      `;
-
-    });
-
-
-    html += `
-
-      <hr>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
-
-    `;
-
-
-    app.innerHTML = html;
-
-
-  } catch (error) {
-
-    console.error(error);
-
-
-    app.innerHTML = `
-
-      <h3>📋 รายการจองทั้งหมด</h3>
-
-      <p>
-        ❌ ${escapeHtml(error.message)}
-      </p>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
-
-    `;
-
-  }
-
-}
     async function openMyBookings() {
 
-  const app =
-    document.getElementById('app');
+      const app =
+        document.getElementById(
+          'app'
+        );
 
-  app.innerHTML = `
-
-    <h3>📋 รายการจองทั้งหมด</h3>
-
-    <div id="bookingListStatus">
-      กำลังโหลดรายการจอง...
-    </div>
-
-  `;
-
-  try {
-
-    // =====================================
-    // อ่าน LINE User
-    // =====================================
-
-    const profile =
-      await liff.getProfile();
-
-    const lineUserId =
-      profile.userId;
-
-    // =====================================
-    // อ่านข้อมูล User ปัจจุบัน
-    // =====================================
-
-    const userUrl =
-
-      GAS_URL +
-
-      '?action=checkLIFFUser' +
-
-      '&lineUserId=' +
-
-      encodeURIComponent(lineUserId);
-
-    const userResponse =
-      await fetch(userUrl);
-
-    const userResult =
-      await userResponse.json();
-
-    if (
-      !userResult.success ||
-      !userResult.found
-    ) {
-
-      throw new Error(
-        'ไม่พบข้อมูลผู้ใช้งาน'
-      );
-
-    }
-
-    const currentUserId =
-      String(userResult.userId || '').trim();
-
-    // =====================================
-    // เรียกรายการจองทั้งหมด
-    // =====================================
-
-    const url =
-
-      GAS_URL +
-
-      '?action=getAllBookings' +
-
-      '&lineUserId=' +
-
-      encodeURIComponent(lineUserId);
-
-    const response =
-      await fetch(url);
-
-    const result =
-      await response.json();
-
-    console.log(
-      'GET ALL BOOKINGS:',
-      result
-    );
-
-    if (!result.success) {
-
-      throw new Error(
-        result.message ||
-        'ไม่สามารถโหลดรายการจองได้'
-      );
-
-    }
-
-    // =====================================
-    // ไม่มีรายการจอง
-    // =====================================
-
-    if (
-      !result.bookings ||
-      result.bookings.length === 0
-    ) {
 
       app.innerHTML = `
 
-        <h3>📋 รายการจองทั้งหมด</h3>
+        <h3>
+          📋 รายการจองทั้งหมด
+        </h3>
 
-        <p>
-          ยังไม่มีรายการจอง
-        </p>
-
-        <br>
-
-        <button
-          onclick="location.reload()"
-        >
-          ↩️ กลับหน้าหลัก
-        </button>
+        <div>
+          กำลังโหลดรายการจอง...
+        </div>
 
       `;
 
-      return;
 
-    }
+      try {
 
-    // =====================================
-    // แสดงรายการจอง
-    // =====================================
+        const profile =
+          await liff.getProfile();
 
-    let html = `
+        const lineUserId =
+          profile.userId;
 
-      <h3>📋 รายการจองทั้งหมด</h3>
 
-    `;
+        // อ่าน User ปัจจุบัน
+        const userUrl =
 
-    result.bookings.forEach(booking => {
+          GAS_URL +
 
-      const bookingUserId =
-        String(
-          booking.userId || ''
-        ).trim();
+          '?action=checkLIFFUser' +
 
-      const bookingStatus =
-        String(
-          booking.status || ''
-        )
-        .trim()
-        .toUpperCase();
+          '&lineUserId=' +
 
-      // แสดงปุ่มยกเลิกเฉพาะ
-      // 1. เป็นรายการของ User ปัจจุบัน
-      // 2. Status = BOOKED
-      const canCancel =
+          encodeURIComponent(
+            lineUserId
+          );
 
-        bookingUserId === currentUserId &&
-        bookingStatus === 'BOOKED';
 
-      html += `
+        const userResult =
+          await fetchJson(
+            userUrl
+          );
 
-        <hr>
 
-        <p>
-          🔢 เลขที่การจอง:
-          <strong>
-            ${escapeHtml(String(booking.bookingId))}
-          </strong>
-        </p>
+        if (
+          !userResult.success ||
+          !userResult.found
+        ) {
 
-        <p>
-          👤 ผู้จอง:
-          ${escapeHtml(String(booking.userName || '-'))}
-        </p>
+          throw new Error(
+            'ไม่พบข้อมูลผู้ใช้งาน'
+          );
 
-        <p>
-          🚘 รถ:
-          ${escapeHtml(String(booking.carId || '-'))}
-        </p>
-
-        <p>
-          📅 เริ่ม:
-          ${formatDateTime(new Date(booking.startDateTime))}
-        </p>
-
-        <p>
-          📅 คืน:
-          ${formatDateTime(new Date(booking.endDateTime))}
-        </p>
-
-        <p>
-          📍 สถานที่:
-          ${escapeHtml(String(booking.destination || '-'))}
-        </p>
-
-        <p>
-          📝 วัตถุประสงค์:
-          ${escapeHtml(String(booking.purpose || '-'))}
-        </p>
-
-        <p>
-          📌 สถานะ:
-          <strong>
-            ${escapeHtml(bookingStatus || '-')}
-          </strong>
-        </p>
-
-        ${
-          canCancel
-            ? `
-              <button
-                onclick="cancelBookingUI(
-                  '${escapeHtml(String(booking.bookingId))}'
-                )"
-              >
-                ❌ ยกเลิกการจอง
-              </button>
-            `
-            : ''
         }
 
-      `;
 
-    });
-
-    html += `
-
-      <hr>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
-
-    `;
-
-    app.innerHTML = html;
-
-  } catch (error) {
-
-    console.error(error);
-
-    app.innerHTML = `
-
-      <h3>📋 รายการจองทั้งหมด</h3>
-
-      <p>
-        ❌ ${escapeHtml(error.message)}
-      </p>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
-
-    `;
-
-  }
-
-}
-
-    // =====================================
-    // อ่าน LINE User
-    // =====================================
-
-    const profile =
-      await liff.getProfile();
-
-    const lineUserId =
-      profile.userId;
+        const currentUserId =
+          String(
+            userResult.userId || ''
+          ).trim();
 
 
-    // =====================================
-    // ดึงรถ Available
-    // =====================================
+        const url =
 
-    const url =
+          GAS_URL +
 
-      GAS_URL +
+          '?action=getAllBookings' +
 
-      '?action=getAvailableCars' +
+          '&lineUserId=' +
 
-      '&lineUserId=' +
-
-      encodeURIComponent(lineUserId);
+          encodeURIComponent(
+            lineUserId
+          );
 
 
-    const response =
-      await fetch(url);
+        const result =
+          await fetchJson(url);
 
 
-    const result =
-      await response.json();
+        console.log(
+          'GET ALL BOOKINGS:',
+          result
+        );
 
 
-    if (!result.success) {
+        if (!result.success) {
 
-      throw new Error(
-        result.message ||
-        'ไม่สามารถโหลดข้อมูลรถได้'
-      );
+          throw new Error(
+            result.message ||
+            'ไม่สามารถโหลดรายการจองได้'
+          );
+
+        }
+
+
+        if (
+          !result.bookings ||
+          result.bookings.length === 0
+        ) {
+
+          app.innerHTML = `
+
+            <h3>
+              📋 รายการจองทั้งหมด
+            </h3>
+
+            <p>
+              ยังไม่มีรายการจอง
+            </p>
+
+            <button
+              onclick="location.reload()"
+            >
+              ↩️ กลับหน้าหลัก
+            </button>
+
+          `;
+
+          return;
+
+        }
+
+
+        let html = `
+
+          <h3>
+            📋 รายการจองทั้งหมด
+          </h3>
+
+        `;
+
+
+        result.bookings
+          .forEach(booking => {
+
+            const bookingUserId =
+              String(
+                booking.userId || ''
+              ).trim();
+
+            const bookingStatus =
+              String(
+                booking.status || ''
+              )
+              .trim()
+              .toUpperCase();
+
+            const canCancel =
+
+              bookingUserId ===
+                currentUserId &&
+
+              bookingStatus ===
+                'BOOKED';
+
+
+            const safeBookingId =
+              escapeHtml(
+                String(
+                  booking.bookingId || '-'
+                )
+              );
+
+
+            html += `
+
+              <div
+                class="booking-card"
+              >
+
+                <p>
+                  🔢 เลขที่การจอง:
+                  <strong>
+                    ${safeBookingId}
+                  </strong>
+                </p>
+
+                <p>
+                  👤 ผู้จอง:
+                  ${escapeHtml(
+                    booking.userName || '-'
+                  )}
+                </p>
+
+                <p>
+                  🚘 รถ:
+                  ${escapeHtml(
+                    booking.carId || '-'
+                  )}
+                </p>
+
+                <p>
+                  📅 เริ่ม:
+                  ${formatDateTime(
+                    new Date(
+                      booking.startDateTime
+                    )
+                  )}
+                </p>
+
+                <p>
+                  📅 คืน:
+                  ${formatDateTime(
+                    new Date(
+                      booking.endDateTime
+                    )
+                  )}
+                </p>
+
+                <p>
+                  📍 สถานที่:
+                  ${escapeHtml(
+                    booking.destination || '-'
+                  )}
+                </p>
+
+                <p>
+                  📝 วัตถุประสงค์:
+                  ${escapeHtml(
+                    booking.purpose || '-'
+                  )}
+                </p>
+
+                <p>
+                  📌 สถานะ:
+                  <strong>
+                    ${escapeHtml(
+                      bookingStatus || '-'
+                    )}
+                  </strong>
+                </p>
+
+                ${
+                  canCancel
+                    ? `
+                      <button
+                        class="danger-button"
+                        data-booking-id="${safeBookingId}"
+                        onclick="cancelBookingUI(this.dataset.bookingId)"
+                      >
+                        ❌ ยกเลิกการจอง
+                      </button>
+                    `
+                    : ''
+                }
+
+              </div>
+
+            `;
+
+          });
+
+
+        html += `
+
+          <br>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+
+        app.innerHTML =
+          html;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        app.innerHTML = `
+
+          <h3>
+            📋 รายการจองทั้งหมด
+          </h3>
+
+          <p>
+            ❌
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+      }
 
     }
 
 
     // =====================================
-    // ไม่มีรถ
+    // ยกเลิกการจอง
     // =====================================
 
-    if (
-      !result.cars ||
-      result.cars.length === 0
+    async function cancelBookingUI(
+      bookingId
     ) {
+
+      const confirmed =
+        confirm(
+          'ต้องการยกเลิกการจอง ' +
+          bookingId +
+          ' ใช่หรือไม่?'
+        );
+
+
+      if (!confirmed) {
+
+        return;
+
+      }
+
+
+      const app =
+        document.getElementById(
+          'app'
+        );
+
+
+      try {
+
+        app.innerHTML = `
+
+          <h3>
+            ⏳ กำลังยกเลิกการจอง...
+          </h3>
+
+          <p>
+            Booking ID:
+            ${escapeHtml(
+              bookingId
+            )}
+          </p>
+
+        `;
+
+
+        const profile =
+          await liff.getProfile();
+
+        const lineUserId =
+          profile.userId;
+
+
+        const url =
+
+          GAS_URL +
+
+          '?action=cancelBooking' +
+
+          '&lineUserId=' +
+
+          encodeURIComponent(
+            lineUserId
+          ) +
+
+          '&bookingId=' +
+
+          encodeURIComponent(
+            bookingId
+          );
+
+
+        const result =
+          await fetchJson(url);
+
+
+        console.log(
+          'CANCEL BOOKING:',
+          result
+        );
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'ไม่สามารถยกเลิกการจองได้'
+          );
+
+        }
+
+
+        app.innerHTML = `
+
+          <h3>
+            ✅ ยกเลิกการจองสำเร็จ
+          </h3>
+
+          <p>
+            ${escapeHtml(
+              result.message ||
+              'ยกเลิกเรียบร้อยแล้ว'
+            )}
+          </p>
+
+          <button
+            onclick="openMyBookings()"
+          >
+            📋 กลับไปรายการจอง
+          </button>
+
+          <br><br>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        app.innerHTML = `
+
+          <h3>
+            ❌ ไม่สามารถยกเลิกการจองได้
+          </h3>
+
+          <p>
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <button
+            onclick="openMyBookings()"
+          >
+            📋 กลับไปรายการจอง
+          </button>
+
+        `;
+
+      }
+
+    }
+
+
+    // =====================================
+    // จองรถ
+    // =====================================
+
+    async function openBooking() {
+
+      const app =
+        document.getElementById(
+          'app'
+        );
+
 
       app.innerHTML = `
 
         <h3>🚗 จองรถ</h3>
 
-        <p>
-          ❌ ไม่พบรถที่พร้อมใช้งาน
-        </p>
-
-        <button
-          onclick="location.reload()"
-        >
-          กลับหน้าหลัก
-        </button>
+        <div>
+          กำลังโหลดรายการรถ...
+        </div>
 
       `;
 
-      return;
+
+      try {
+
+        const profile =
+          await liff.getProfile();
+
+        const lineUserId =
+          profile.userId;
+
+
+        const url =
+
+          GAS_URL +
+
+          '?action=getAvailableCars' +
+
+          '&lineUserId=' +
+
+          encodeURIComponent(
+            lineUserId
+          );
+
+
+        const result =
+          await fetchJson(url);
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'ไม่สามารถโหลดข้อมูลรถได้'
+          );
+
+        }
+
+
+        if (
+          !result.cars ||
+          result.cars.length === 0
+        ) {
+
+          app.innerHTML = `
+
+            <h3>🚗 จองรถ</h3>
+
+            <p>
+              ❌ ไม่พบรถที่พร้อมใช้งาน
+            </p>
+
+            <button
+              onclick="location.reload()"
+            >
+              กลับหน้าหลัก
+            </button>
+
+          `;
+
+          return;
+
+        }
+
+
+        let options =
+          '';
+
+
+        result.cars
+          .forEach(car => {
+
+            const label = [
+
+              car.carType,
+
+              car.brand,
+
+              car.model,
+
+              car.licensePlate
+
+            ]
+            .filter(Boolean)
+            .join(' - ');
+
+
+            options += `
+
+              <option
+                value="${escapeHtml(
+                  car.carId
+                )}"
+              >
+                ${escapeHtml(
+                  label
+                )}
+              </option>
+
+            `;
+
+          });
+
+
+        app.innerHTML = `
+
+          <h3>🚗 จองรถ</h3>
+
+
+          <label>
+            🚘 เลือกรถ
+          </label>
+
+          <select
+            id="carId"
+          >
+
+            <option value="">
+              -- เลือกรถ --
+            </option>
+
+            ${options}
+
+          </select>
+
+
+          <br><br>
+
+
+          <label>
+            📅 วันและเวลาเริ่มใช้รถ
+          </label>
+
+          <input
+            type="datetime-local"
+            id="startDateTime"
+          >
+
+
+          <br><br>
+
+
+          <label>
+            📅 วันและเวลาคืนรถ
+          </label>
+
+          <input
+            type="datetime-local"
+            id="endDateTime"
+          >
+
+
+          <br><br>
+
+
+          <label>
+            📍 สถานที่ไป
+          </label>
+
+          <input
+            type="text"
+            id="destination"
+            placeholder="เช่น สนามบินภูเก็ต"
+          >
+
+
+          <br><br>
+
+
+          <label>
+            📝 วัตถุประสงค์
+          </label>
+
+          <textarea
+            id="purpose"
+            rows="3"
+            placeholder="เช่น รับส่งแขก"
+          ></textarea>
+
+
+          <br><br>
+
+
+          <button
+            onclick="reviewBookingForm()"
+          >
+            ตรวจสอบข้อมูล
+          </button>
+
+
+          <br><br>
+
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        app.innerHTML = `
+
+          <h3>🚗 จองรถ</h3>
+
+          <p>
+            ❌
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+      }
 
     }
 
 
     // =====================================
-    // สร้างรายการรถ
+    // ตรวจสอบฟอร์มก่อนบันทึก
     // =====================================
 
-    let options = '';
+    function reviewBookingForm() {
 
+      const carId =
+        document.getElementById(
+          'carId'
+        ).value;
 
-    result.cars.forEach(car => {
 
-      const label = [
+      const startDateTime =
+        document.getElementById(
+          'startDateTime'
+        ).value;
 
-        car.carType,
-        car.brand,
-        car.model,
-        car.licensePlate
 
-      ]
-      .filter(Boolean)
-      .join(' - ');
+      const endDateTime =
+        document.getElementById(
+          'endDateTime'
+        ).value;
 
 
-      options += `
+      const destination =
+        document.getElementById(
+          'destination'
+        )
+        .value
+        .trim();
 
-        <option value="${car.carId}">
-          ${label}
-        </option>
 
-      `;
+      const purpose =
+        document.getElementById(
+          'purpose'
+        )
+        .value
+        .trim();
 
-    });
 
+      if (!carId) {
 
-    // =====================================
-    // แสดงแบบฟอร์ม
-    // =====================================
+        alert(
+          'กรุณาเลือกรถ'
+        );
 
-    app.innerHTML = `
+        return;
 
-      <h3>🚗 จองรถ</h3>
+      }
 
 
-      <!-- รถ -->
+      if (!startDateTime) {
 
-      <label>
-        🚘 เลือกรถ
-      </label>
+        alert(
+          'กรุณาระบุวันและเวลาเริ่มใช้รถ'
+        );
 
-      <br>
+        return;
 
-      <select
-        id="carId"
-        required
-      >
+      }
 
-        <option value="">
-          -- เลือกรถ --
-        </option>
 
-        ${options}
+      if (!endDateTime) {
 
-      </select>
+        alert(
+          'กรุณาระบุวันและเวลาคืนรถ'
+        );
 
+        return;
 
-      <br><br>
+      }
 
 
-      <!-- วันเวลาเริ่ม -->
+      if (!destination) {
 
-      <label>
-        📅 วันและเวลาเริ่มใช้รถ
-      </label>
+        alert(
+          'กรุณาระบุสถานที่ไป'
+        );
 
-      <br>
+        return;
 
-      <input
-        type="datetime-local"
-        id="startDateTime"
-        required
-      />
+      }
 
 
-      <br><br>
+      if (!purpose) {
 
+        alert(
+          'กรุณาระบุวัตถุประสงค์'
+        );
 
-      <!-- วันเวลาสิ้นสุด -->
+        return;
 
-      <label>
-        📅 วันและเวลาคืนรถ
-      </label>
+      }
 
-      <br>
 
-      <input
-        type="datetime-local"
-        id="endDateTime"
-        required
-      />
+      const start =
+        new Date(
+          startDateTime
+        );
 
 
-      <br><br>
+      const end =
+        new Date(
+          endDateTime
+        );
 
 
-      <!-- Destination -->
+      if (
+        isNaN(start.getTime()) ||
+        isNaN(end.getTime())
+      ) {
 
-      <label>
-        📍 สถานที่ไป
-      </label>
+        alert(
+          'รูปแบบวันเวลาไม่ถูกต้อง'
+        );
 
-      <br>
+        return;
 
-      <input
-        type="text"
-        id="destination"
-        placeholder="เช่น สนามบินภูเก็ต"
-        required
-      />
+      }
 
 
-      <br><br>
+      if (end <= start) {
 
+        alert(
+          'วันเวลาคืนรถต้องมากกว่าวันเวลาเริ่มใช้รถ'
+        );
 
-      <!-- Purpose -->
+        return;
 
-      <label>
-        📝 วัตถุประสงค์
-      </label>
+      }
 
-      <br>
 
-      <textarea
-        id="purpose"
-        rows="4"
-        placeholder="ระบุวัตถุประสงค์ในการใช้รถ"
-        required
-      ></textarea>
+      pendingBooking = {
 
+        carId: carId,
 
-      <br><br>
+        startDateTime:
+          startDateTime,
 
+        endDateTime:
+          endDateTime,
 
-      <!-- Buttons -->
+        destination:
+          destination,
 
-      <button
-        onclick="submitBookingForm()"
-      >
-        📤 ตรวจสอบข้อมูล
-      </button>
+        purpose:
+          purpose
 
+      };
 
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
 
-    `;
+      const app =
+        document.getElementById(
+          'app'
+        );
 
-
-  } catch (error) {
-
-    app.innerHTML = `
-
-      <h3>🚗 จองรถ</h3>
-
-      <p>
-        ❌ ${error.message}
-      </p>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        กลับหน้าหลัก
-      </button>
-
-    `;
-
-  }
-
-}
-    function submitBookingForm() {
-
-  const carId =
-    document.getElementById('carId')
-      .value;
-
-
-  const startDateTime =
-    document.getElementById('startDateTime')
-      .value;
-
-
-  const endDateTime =
-    document.getElementById('endDateTime')
-      .value;
-
-
-  const destination =
-    document.getElementById('destination')
-      .value
-      .trim();
-
-
-  const purpose =
-    document.getElementById('purpose')
-      .value
-      .trim();
-
-
-  // =====================================
-  // ตรวจข้อมูล
-  // =====================================
-
-  if (!carId) {
-
-    alert(
-      'กรุณาเลือกรถ'
-    );
-
-    return;
-
-  }
-
-
-  if (!startDateTime) {
-
-    alert(
-      'กรุณาระบุวันและเวลาเริ่มใช้รถ'
-    );
-
-    return;
-
-  }
-
-
-  if (!endDateTime) {
-
-    alert(
-      'กรุณาระบุวันและเวลาคืนรถ'
-    );
-
-    return;
-
-  }
-
-
-  if (!destination) {
-
-    alert(
-      'กรุณาระบุสถานที่ไป'
-    );
-
-    return;
-
-  }
-
-
-  if (!purpose) {
-
-    alert(
-      'กรุณาระบุวัตถุประสงค์'
-    );
-
-    return;
-
-  }
-
-
-  // =====================================
-  // ตรวจเวลา
-  // =====================================
-
-  const start =
-    new Date(startDateTime);
-
-
-  const end =
-    new Date(endDateTime);
-
-
-  if (
-    isNaN(start.getTime()) ||
-    isNaN(end.getTime())
-  ) {
-
-    alert(
-      'รูปแบบวันเวลไม่ถูกต้อง'
-    );
-
-    return;
-
-  }
-
-
-  if (end <= start) {
-
-    alert(
-      'วันเวลาคืนรถต้องมากกว่าวันเวลาเริ่มใช้รถ'
-    );
-
-    return;
-
-  }
-// =====================================
-// เก็บข้อมูลการจอง
-// =====================================
-
-pendingBooking = {
-
-  carId: carId,
-
-  startDateTime: startDateTime,
-
-  endDateTime: endDateTime,
-
-  destination: destination,
-
-  purpose: purpose
-
-};
-
-  // =====================================
-  // แสดงข้อมูลที่กรอก
-  // =====================================
-
-  const app =
-    document.getElementById('app');
-
-
-  app.innerHTML = `
-
-    <h3>🔍 ตรวจสอบข้อมูลการจอง</h3>
-
-
-    <p>
-      🚘 รถ:
-      ${carId}
-    </p>
-
-
-    <p>
-      📅 เริ่ม:
-      ${formatDateTime(start)}
-    </p>
-
-
-    <p>
-      📅 คืน:
-      ${formatDateTime(end)}
-    </p>
-
-
-    <p>
-      📍 สถานที่:
-      ${escapeHtml(destination)}
-    </p>
-
-
-    <p>
-      📝 วัตถุประสงค์:
-      ${escapeHtml(purpose)}
-    </p>
-
-
-    <hr>
-
-
-    <button
-      onclick="confirmBookingForm()"
-    >
-      ✅ ยืนยันข้อมูล
-    </button>
-
-
-    <button
-      onclick="openBooking()"
-    >
-      ✏️ แก้ไขข้อมูล
-    </button>
-
-
-  `;
-
-
-}
-    function formatDateTime(date) {
-
-  return date.toLocaleString(
-    'th-TH',
-    {
-      dateStyle: 'medium',
-      timeStyle: 'short'
-    }
-  );
-
-}
-function escapeHtml(text) {
-
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-
-}
-    async function confirmBookingForm() {
-
-  const profile =
-    await liff.getProfile();
-
-  const lineUserId =
-    profile.userId;
-
-  if (!pendingBooking) {
-
-    alert(
-      '❌ ไม่พบข้อมูลการจอง'
-    );
-
-    return;
-
-  }
-
-  const {
-    carId,
-    startDateTime,
-    endDateTime,
-    destination,
-    purpose
-  } = pendingBooking;
-
-
-  const app =
-    document.getElementById('app');
-
-
-  app.innerHTML = `
-
-    <h3>⏳ กำลังบันทึกการจอง...</h3>
-
-    <p>
-      กรุณารอสักครู่
-    </p>
-
-  `;
-
-
-  try {
-
-    const url =
-
-      GAS_URL +
-
-      '?action=createBooking' +
-
-      '&lineUserId=' +
-      encodeURIComponent(lineUserId) +
-
-      '&carId=' +
-      encodeURIComponent(carId) +
-
-      '&startDateTime=' +
-      encodeURIComponent(startDateTime) +
-
-      '&endDateTime=' +
-      encodeURIComponent(endDateTime) +
-
-      '&destination=' +
-      encodeURIComponent(destination) +
-
-      '&purpose=' +
-      encodeURIComponent(purpose);
-
-
-    const response =
-      await fetch(url);
-
-
-    const result =
-      await response.json();
-
-
-    console.log(
-      'CREATE BOOKING:',
-      result
-    );
-
-
-    if (!result.success) {
-
-      throw new Error(
-        result.message ||
-        'ไม่สามารถสร้างรายการจองได้'
-      );
-
-    }
-
-
-    app.innerHTML = `
-
-      <h3>✅ จองรถสำเร็จ</h3>
-
-      <p>
-        เลขที่การจอง:
-        <strong>
-          ${escapeHtml(result.bookingId)}
-        </strong>
-      </p>
-
-      <br>
-
-      <button
-        onclick="location.reload()"
-      >
-        กลับหน้าหลัก
-      </button>
-
-    `;
-
-
-    pendingBooking = null;
-
-
-  } catch (error) {
-
-    console.error(error);
-
-
-    app.innerHTML = `
-
-      <h3>❌ ไม่สามารถจองรถได้</h3>
-
-      <p>
-        ${escapeHtml(error.message)}
-      </p>
-
-      <br>
-
-      <button
-        onclick="openBooking()"
-      >
-        กลับไปแก้ไขการจอง
-      </button>
-
-    `;
-
-  }
-
-}
-   
-    async function openMileage() {
-
-  const app =
-    document.getElementById('app');
-
-  app.innerHTML = `
-
-    <h3>🛣️ ประวัติการใช้รถ</h3>
-
-    <p>
-      กำลังโหลดข้อมูล...
-    </p>
-
-  `;
-
-
-  try {
-
-    // =====================================
-    // อ่าน LINE User
-    // =====================================
-
-    const profile =
-      await liff.getProfile();
-
-    const lineUserId =
-      profile.userId;
-
-
-    // =====================================
-    // เรียก API
-    // =====================================
-
-    const url =
-
-      GAS_URL +
-
-      '?action=getMileageHistory' +
-
-      '&lineUserId=' +
-
-      encodeURIComponent(lineUserId);
-
-
-    const response =
-      await fetch(url);
-
-
-    const result =
-      await response.json();
-
-
-    console.log(
-      'GET MILEAGE HISTORY:',
-      result
-    );
-
-
-    if (!result.success) {
-
-      throw new Error(
-        result.message ||
-        'ไม่สามารถโหลดประวัติการใช้รถได้'
-      );
-
-    }
-
-
-    // =====================================
-    // ไม่มีข้อมูล
-    // =====================================
-
-    if (
-      !result.mileage ||
-      result.mileage.length === 0
-    ) {
 
       app.innerHTML = `
 
-        <h3>🛣️ ประวัติการใช้รถ</h3>
+        <h3>
+          🔍 ตรวจสอบข้อมูลการจอง
+        </h3>
+
 
         <p>
-          ยังไม่มีประวัติการใช้รถ
+          🚘 รถ:
+          ${escapeHtml(
+            carId
+          )}
         </p>
 
-        <br>
+
+        <p>
+          📅 เริ่ม:
+          ${formatDateTime(
+            start
+          )}
+        </p>
+
+
+        <p>
+          📅 คืน:
+          ${formatDateTime(
+            end
+          )}
+        </p>
+
+
+        <p>
+          📍 สถานที่:
+          ${escapeHtml(
+            destination
+          )}
+        </p>
+
+
+        <p>
+          📝 วัตถุประสงค์:
+          ${escapeHtml(
+            purpose
+          )}
+        </p>
+
+
+        <hr>
+
+
+        <button
+          onclick="confirmBookingForm()"
+        >
+          ✅ ยืนยันข้อมูล
+        </button>
+
+
+        <br><br>
+
+
+        <button
+          onclick="openBooking()"
+        >
+          ✏️ แก้ไขข้อมูล
+        </button>
+
+
+        <br><br>
+
 
         <button
           onclick="location.reload()"
@@ -1471,118 +1310,429 @@ function escapeHtml(text) {
 
       `;
 
-      return;
+    }
+
+
+    // รองรับชื่อฟังก์ชันเดิม ถ้ามีปุ่มเก่าเรียกใช้
+    function submitBookingForm() {
+
+      reviewBookingForm();
 
     }
 
 
     // =====================================
-    // แสดงข้อมูล
+    // บันทึก Booking
     // =====================================
 
-    let html = `
+    async function confirmBookingForm() {
 
-      <h3>🛣️ ประวัติการใช้รถ</h3>
+      if (!pendingBooking) {
 
-    `;
+        alert(
+          '❌ ไม่พบข้อมูลการจอง'
+        );
+
+        return;
+
+      }
 
 
-    result.mileage.forEach(item => {
+      const app =
+        document.getElementById(
+          'app'
+        );
 
-      html += `
 
-        <hr>
+      try {
+
+        const profile =
+          await liff.getProfile();
+
+        const lineUserId =
+          profile.userId;
+
+
+        const {
+          carId,
+          startDateTime,
+          endDateTime,
+          destination,
+          purpose
+        } = pendingBooking;
+
+
+        app.innerHTML = `
+
+          <h3>
+            ⏳ กำลังบันทึกการจอง...
+          </h3>
+
+          <p>
+            กรุณารอสักครู่
+          </p>
+
+        `;
+
+
+        const url =
+
+          GAS_URL +
+
+          '?action=createBooking' +
+
+          '&lineUserId=' +
+
+          encodeURIComponent(
+            lineUserId
+          ) +
+
+          '&carId=' +
+
+          encodeURIComponent(
+            carId
+          ) +
+
+          '&startDateTime=' +
+
+          encodeURIComponent(
+            startDateTime
+          ) +
+
+          '&endDateTime=' +
+
+          encodeURIComponent(
+            endDateTime
+          ) +
+
+          '&destination=' +
+
+          encodeURIComponent(
+            destination
+          ) +
+
+          '&purpose=' +
+
+          encodeURIComponent(
+            purpose
+          );
+
+
+        const result =
+          await fetchJson(url);
+
+
+        console.log(
+          'CREATE BOOKING:',
+          result
+        );
+
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'ไม่สามารถสร้างรายการจองได้'
+          );
+
+        }
+
+
+        app.innerHTML = `
+
+          <h3>
+            ✅ จองรถสำเร็จ
+          </h3>
+
+          <p>
+            เลขที่การจอง:
+            <strong>
+              ${escapeHtml(
+                result.bookingId
+              )}
+            </strong>
+          </p>
+
+          <br>
+
+          <button
+            onclick="openMyBookings()"
+          >
+            📋 ดูรายการจองทั้งหมด
+          </button>
+
+          <br><br>
+
+          <button
+            onclick="location.reload()"
+          >
+            กลับหน้าหลัก
+          </button>
+
+        `;
+
+
+        pendingBooking =
+          null;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        app.innerHTML = `
+
+          <h3>
+            ❌ ไม่สามารถจองรถได้
+          </h3>
+
+          <p>
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <br>
+
+          <button
+            onclick="openBooking()"
+          >
+            กลับไปกรอกการจองใหม่
+          </button>
+
+        `;
+
+      }
+
+    }
+
+
+    // =====================================
+    // Mileage
+    // =====================================
+
+    async function openMileage() {
+
+      const app =
+        document.getElementById(
+          'app'
+        );
+
+
+      app.innerHTML = `
+
+        <h3>
+          🛣️ ประวัติการใช้รถ
+        </h3>
 
         <p>
-          🔢 เลขที่การจอง:
-          <strong>
-            ${escapeHtml(String(item.bookingId || '-'))}
-          </strong>
-        </p>
-
-        <p>
-          🚘 รถ:
-          ${escapeHtml(String(item.carId || '-'))}
-        </p>
-
-        <p>
-          📍 สถานที่:
-          ${escapeHtml(String(item.destination || '-'))}
-        </p>
-
-        <p>
-          🛣️ เลขไมล์เริ่ม:
-          ${escapeHtml(String(item.startMileage || '-'))}
-        </p>
-
-        <p>
-          🛣️ เลขไมล์สิ้นสุด:
-          ${escapeHtml(String(item.endMileage || '-'))}
-        </p>
-
-        <p>
-          📏 ระยะทาง:
-          ${escapeHtml(String(item.distanceKm || '-'))} กม.
-        </p>
-
-        <p>
-          📅 วันที่บันทึก:
-          ${
-            item.recordedAt
-              ? formatDateTime(new Date(item.recordedAt))
-              : '-'
-          }
+          กำลังโหลดข้อมูล...
         </p>
 
       `;
 
-    });
+
+      try {
+
+        const profile =
+          await liff.getProfile();
+
+        const lineUserId =
+          profile.userId;
 
 
-    html += `
+        const url =
 
-      <hr>
+          GAS_URL +
 
-      <br>
+          '?action=getMileageHistory' +
 
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
+          '&lineUserId=' +
 
-    `;
+          encodeURIComponent(
+            lineUserId
+          );
 
 
-    app.innerHTML = html;
+        const result =
+          await fetchJson(url);
 
 
-  } catch (error) {
+        console.log(
+          'GET MILEAGE HISTORY:',
+          result
+        );
 
-    console.error(error);
+
+        if (!result.success) {
+
+          throw new Error(
+            result.message ||
+            'ไม่สามารถโหลดประวัติการใช้รถได้'
+          );
+
+        }
 
 
-    app.innerHTML = `
+        if (
+          !result.mileage ||
+          result.mileage.length === 0
+        ) {
 
-      <h3>🛣️ ประวัติการใช้รถ</h3>
+          app.innerHTML = `
 
-      <p>
-        ❌ ${escapeHtml(error.message)}
-      </p>
+            <h3>
+              🛣️ ประวัติการใช้รถ
+            </h3>
 
-      <br>
+            <p>
+              ยังไม่มีประวัติการใช้รถ
+            </p>
 
-      <button
-        onclick="location.reload()"
-      >
-        ↩️ กลับหน้าหลัก
-      </button>
+            <button
+              onclick="location.reload()"
+            >
+              ↩️ กลับหน้าหลัก
+            </button>
 
-    `;
+          `;
 
-  }
+          return;
 
-}
+        }
+
+
+        let html = `
+
+          <h3>
+            🛣️ ประวัติการใช้รถ
+          </h3>
+
+        `;
+
+
+        result.mileage
+          .forEach(item => {
+
+            html += `
+
+              <div
+                class="booking-card"
+              >
+
+                <p>
+                  🔢 เลขที่การจอง:
+                  <strong>
+                    ${escapeHtml(
+                      item.bookingId || '-'
+                    )}
+                  </strong>
+                </p>
+
+                <p>
+                  🚘 รถ:
+                  ${escapeHtml(
+                    item.carId || '-'
+                  )}
+                </p>
+
+                <p>
+                  📍 สถานที่:
+                  ${escapeHtml(
+                    item.destination || '-'
+                  )}
+                </p>
+
+                <p>
+                  🛣️ เลขไมล์เริ่ม:
+                  ${escapeHtml(
+                    item.startMileage || '-'
+                  )}
+                </p>
+
+                <p>
+                  🛣️ เลขไมล์สิ้นสุด:
+                  ${escapeHtml(
+                    item.endMileage || '-'
+                  )}
+                </p>
+
+                <p>
+                  📏 ระยะทาง:
+                  ${escapeHtml(
+                    item.distanceKm || '-'
+                  )}
+                  กม.
+                </p>
+
+                <p>
+                  📅 วันที่บันทึก:
+                  ${
+                    item.recordedAt
+                      ? formatDateTime(
+                          new Date(
+                            item.recordedAt
+                          )
+                        )
+                      : '-'
+                  }
+                </p>
+
+              </div>
+
+            `;
+
+          });
+
+
+        html += `
+
+          <br>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+
+        app.innerHTML =
+          html;
+
+
+      } catch (error) {
+
+        console.error(error);
+
+
+        app.innerHTML = `
+
+          <h3>
+            🛣️ ประวัติการใช้รถ
+          </h3>
+
+          <p>
+            ❌
+            ${escapeHtml(
+              error.message
+            )}
+          </p>
+
+          <button
+            onclick="location.reload()"
+          >
+            ↩️ กลับหน้าหลัก
+          </button>
+
+        `;
+
+      }
+
+    }
+
 
     // =====================================
     // START
