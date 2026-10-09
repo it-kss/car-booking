@@ -554,12 +554,25 @@
                   )}
                 </p>
 
-                <p>
-                  🚘 รถ:
-                  ${escapeHtml(
-                    booking.carId || '-'
-                  )}
-                </p>
+                ```
+            <p>
+              🚘 รถ:
+              ${escapeHtml(
+                [
+                  booking.carType,
+                  booking.model,
+                  booking.licensePlate
+                ]
+                  .filter(value =>
+                    value &&
+                    String(value).trim() !== '' &&
+                    String(value).trim() !== '-'
+                  )
+                  .join(' - ') || '-'
+              )}
+            </p>
+```
+
 
                 <p>
                   📅 เริ่ม:
