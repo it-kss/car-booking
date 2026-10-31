@@ -287,11 +287,13 @@
         // แสดงเมนูหลังตรวจสอบสิทธิ์ แล้วเปิดหน้าที่ระบุในลิงก์ (ถ้ามี)
         showMainMenu(result);
 
-        if (requestedPage === 'booking') {
-          openBooking();
-        } else if (requestedPage === 'history') {
-          openMileage();
-        }
+      if (requestedPage === 'booking') {
+  openBooking();
+} else if (requestedPage === 'bookings') {
+  openMyBookings();
+} else if (requestedPage === 'history') {
+  openMileage();
+}
 
 
       } catch (error) {
