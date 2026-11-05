@@ -1292,7 +1292,7 @@
 
       // อ่านรายละเอียดรถที่ผู้ใช้เลือก
 const carLabel =
-  document.getElementById('carId')
+  document.getElementById('carId').value;
     .selectedOptions[0]
     ?.textContent.trim() || carId;
 
