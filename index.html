@@ -1291,10 +1291,11 @@
     function reviewBookingForm() {
 
       // อ่านรายละเอียดรถที่ผู้ใช้เลือก
+// อ่านรายละเอียดรถที่ผู้ใช้เลือก
+const carSelect = document.getElementById('carId');
+const carId = carSelect.value;
 const carLabel =
-  document.getElementById('carId').value;
-    .selectedOptions[0]
-    ?.textContent.trim() || carId;
+  carSelect.selectedOptions[0]?.textContent.trim() || carId;
 
 
       const startDateTime =
